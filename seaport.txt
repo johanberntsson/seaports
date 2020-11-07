@@ -1,0 +1,267 @@
+/* MEGA65, C65-mode
+  screen memory $0800 (2048)
+  sprite vectors $0ff8 (4088)
+*/
+
+
+// check if the sprites are already loaded/in place
+4 ifpeek(12288+24)=136then10
+
+// make 40MHz
+5 poke53295,71:poke53295,83:poke0,65
+
+//read sprite data
+6
+  forx=0to23:print"sprite"x"/23":fory=0to63:readd:poke12288+y+x*64,d:next:next
+
+// Back to 1MHz
+7 poke53295,71:poke53295,83:poke0,64
+
+// init sprites
+10 
+  vc=53248: 
+  pokevc+21,1:
+  poke2040,192:
+  pokevc+39,7:
+  pokevc+23,1:
+  pokevc+29,1
+
+
+20
+  t=1:          // thrust control position
+  r=0:          // rudder control position
+  k=0.1:        // friction constant (water drag)
+  vf=0:         // velocity (forwards)
+  vb=0:         // velocity (backwards)
+  va=0:         // velocity angle
+  cs=1:         // cos(va) (precalculated)
+  sn=0:         // sin(va) (precalculated)
+  x=50:         // boat position (x-coord)
+  y=150         // boat position (y-coord)
+
+25
+  gosub500
+
+// decode thrust control
+30 
+  tf=0:tb=0:
+  ift>0thentf=t     // forwards thrust
+31
+  ift<0thentb=-t    // backwards thrust
+
+40 
+  iftf=0andvf=0then50 // skip ahead if no thrust or velocity
+// calculate new forward velocity
+41
+  d=-k*vf*vf:   // drag
+  a=tf+d:       // acceleration
+  vf=vf+a:
+  ifvf<0.9thenvf=0
+
+50 
+  iftb=0andvb=0then60 // skip ahead if no thrust or velocity
+// calculate new forward velocity
+51
+  d=-k*vb*vb:   // drag
+  a=tb+d:       // acceleration
+  vb=vb+a:
+  ifvb<0.9thenvf=0
+
+// update velocity
+60 
+  v=vf-vb
+
+// update position
+70
+  x=x+cs*v:
+  y=y+sn*v
+
+80
+  ifr=0then90
+// update angle using rudder
+81 
+  va=(r*v)/1000:
+// normalize the angles
+  ifva>6.28thenva=va-6.28
+82
+  ifva<-6.28thenva=va+6.28
+// precalculate the trig values
+85
+  cs=cos(va):
+  sn=sin(va)
+
+
+// draw the ship
+90
+  ifx<0thenx=0
+91
+  ifx>255thenx=255
+92
+  ify<0theny=0
+93
+  ify>255theny=255
+94
+  pokevc,x:pokevc+1,y:
+  sp=(abs(va)*24)/6.28:poke2040,sp+192
+
+
+// check if crashed
+100
+  ifpeek(53279)and1thenprint"{home}game over":end
+
+// read player input
+110
+  geta$:ifa$="q"thenend
+  goto30
+
+
+500 // draw harbour
+  print"{clear}{rvon}{gry2}";
+  print "                              marseilles";
+  print "                                        ";
+  print "                  {rvof}                   {rvon}   ";
+  print "                  {rvof}                   {rvon}   ";
+  print "                  {rvof}                   {rvon}   ";
+  print "                  {rvof}                   {rvon}   ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}               {rvon}   {rvof}             {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "{rvof}                               {rvon}         ";
+  print "                                        ";
+  print "                                       ";
+  poke2023,160:poke56295,12
+  return
+
+1000 :: rem sprite_0 / singlecolor / color: 3
+1010 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1020 data 0,0,0,0,0,255,255,0,136,0,192,136,0,48,168,0
+1030 data 24,136,0,48,136,0,192,255,255,0,0,0,0,0,0,0
+1040 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1050 :: rem sprite_0 / singlecolor / color: 3
+1060 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1070 data 3,240,0,28,8,0,224,8,31,0,8,226,0,16,129,0
+1080 data 96,73,3,128,96,156,0,33,224,0,38,0,0,24,0,0
+1090 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1100 :: rem sprite_0 / singlecolor / color: 3
+1110 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1120 data 3,224,0,12,32,0,112,96,1,128,64,6,0,128,24,1
+1130 data 0,40,6,0,196,8,0,130,48,0,73,64,0,97,128,0
+1140 data 35,0,0,20,0,0,8,0,0,0,0,0,0,0,0,3
+1150 :: rem sprite_0 / singlecolor / color: 3
+1160 data 0,0,0,0,0,0,0,0,0,0,1,192,0,6,64,0
+1170 data 24,64,0,32,128,0,64,128,0,129,0,1,1,0,2,2
+1180 data 0,4,4,0,8,8,0,16,16,0,40,32,0,68,64,0
+1190 data 146,128,0,73,0,0,34,0,0,20,0,0,8,0,0,3
+1200 :: rem sprite_0 / singlecolor / color: 3
+1210 data 0,0,0,0,7,0,0,8,128,0,16,128,0,32,128,0
+1220 data 32,128,0,65,0,0,65,0,0,130,0,0,130,0,1,4
+1230 data 0,1,4,0,2,8,0,4,8,0,4,16,0,11,16,0
+1240 data 8,160,0,18,96,0,8,64,0,4,128,0,3,0,0,3
+1250 :: rem sprite_0 / singlecolor / color: 3
+1260 data 0,24,0,0,40,0,0,76,0,0,68,0,0,68,0,0
+1270 data 132,0,0,132,0,0,132,0,1,132,0,1,4,0,2,4
+1280 data 0,2,8,0,2,8,0,2,8,0,3,8,0,4,200,0
+1290 data 4,48,0,4,144,0,6,16,0,1,208,0,0,48,0,3
+1300 :: rem sprite_0 / singlecolor / color: 3
+1310 data 0,32,0,0,112,0,0,80,0,0,136,0,0,136,0,1
+1320 data 4,0,1,4,0,1,4,0,1,4,0,1,4,0,1,4
+1330 data 0,1,4,0,1,4,0,1,4,0,1,4,0,1,4,0
+1340 data 1,252,0,1,4,0,1,36,0,1,4,0,1,252,0,3
+1350 :: rem sprite_0 / singlecolor / color: 3
+1360 data 0,24,0,0,20,0,0,50,0,0,34,0,0,34,0,0
+1370 data 33,0,0,33,0,0,33,0,0,33,128,0,32,128,0,32
+1380 data 64,0,16,64,0,16,64,0,16,64,0,16,192,0,19,32
+1390 data 0,12,32,0,9,32,0,8,96,0,11,128,0,12,0,3
+1400 :: rem sprite_0 / singlecolor / color: 3
+1410 data 0,0,0,0,224,0,1,16,0,1,8,0,1,4,0,1
+1420 data 4,0,0,130,0,0,130,0,0,65,0,0,65,0,0,32
+1430 data 128,0,32,128,0,16,64,0,16,32,0,8,32,0,8,208
+1440 data 0,5,16,0,6,72,0,2,16,0,1,32,0,0,192,3
+1450 :: rem sprite_0 / singlecolor / color: 3
+1460 data 0,0,0,0,0,0,0,0,0,3,128,0,2,96,0,2
+1470 data 24,0,1,4,0,1,2,0,0,129,0,0,128,128,0,64
+1480 data 64,0,32,32,0,16,16,0,8,8,0,4,20,0,2,34
+1490 data 0,1,73,0,0,146,0,0,68,0,0,40,0,0,16,3
+1500 :: rem sprite_0 / singlecolor / color: 3
+1510 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7
+1520 data 192,0,4,48,0,6,14,0,2,1,128,1,0,96,0,128
+1530 data 24,0,96,20,0,16,35,0,12,65,0,2,146,0,1,134
+1540 data 0,0,196,0,0,40,0,0,16,0,0,0,0,0,0,3
+1550 :: rem sprite_0 / singlecolor / color: 3
+1560 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15
+1570 data 192,0,16,56,0,16,7,0,16,0,248,8,0,71,6,0
+1580 data 129,1,192,146,0,57,6,0,7,132,0,0,100,0,0,24
+1590 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1600 :: rem sprite_0 / singlecolor / color: 3
+1610 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1620 data 0,0,0,0,0,0,255,255,3,0,17,12,0,17,24,0
+1630 data 21,12,0,17,3,0,17,0,255,255,0,0,0,0,0,0
+1640 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1650 :: rem sprite_0 / singlecolor / color: 3
+1660 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1670 data 0,24,0,0,100,0,7,132,0,57,6,1,192,146,6,0
+1680 data 129,8,0,71,16,0,248,16,7,0,16,56,0,15,192,0
+1690 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1700 :: rem sprite_0 / singlecolor / color: 3
+1710 data 0,0,0,0,0,0,0,0,16,0,0,40,0,0,196,0
+1720 data 1,134,0,2,146,0,12,65,0,16,35,0,96,20,0,128
+1730 data 24,1,0,96,2,1,128,6,14,0,4,48,0,7,192,0
+1740 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+1750 :: rem sprite_0 / singlecolor / color: 3
+1760 data 0,0,16,0,0,40,0,0,68,0,0,146,0,1,73,0
+1770 data 2,34,0,4,20,0,8,8,0,16,16,0,32,32,0,64
+1780 data 64,0,128,128,0,129,0,1,2,0,1,4,0,2,24,0
+1790 data 2,96,0,3,128,0,0,0,0,0,0,0,0,0,0,3
+1800 :: rem sprite_0 / singlecolor / color: 3
+1810 data 0,0,192,0,1,32,0,2,16,0,6,72,0,5,16,0
+1820 data 8,208,0,8,32,0,16,32,0,16,64,0,32,128,0,32
+1830 data 128,0,65,0,0,65,0,0,130,0,0,130,0,1,4,0
+1840 data 1,4,0,1,8,0,1,16,0,0,224,0,0,0,0,3
+1850 :: rem sprite_0 / singlecolor / color: 3
+1860 data 0,12,0,0,11,128,0,8,96,0,9,32,0,12,32,0
+1870 data 19,32,0,16,192,0,16,64,0,16,64,0,16,64,0,32
+1880 data 64,0,32,128,0,33,128,0,33,0,0,33,0,0,33,0
+1890 data 0,34,0,0,34,0,0,50,0,0,20,0,0,24,0,3
+1900 :: rem sprite_0 / singlecolor / color: 3
+1910 data 1,252,0,1,4,0,1,36,0,1,4,0,1,252,0,1
+1920 data 4,0,1,4,0,1,4,0,1,4,0,1,4,0,1,4
+1930 data 0,1,4,0,1,4,0,1,4,0,1,4,0,1,4,0
+1940 data 0,136,0,0,136,0,0,80,0,0,112,0,0,32,0,3
+1950 :: rem sprite_0 / singlecolor / color: 3
+1960 data 0,48,0,1,208,0,6,16,0,4,144,0,4,48,0,4
+1970 data 200,0,3,8,0,2,8,0,2,8,0,2,8,0,2,4
+1980 data 0,1,4,0,1,132,0,0,132,0,0,132,0,0,132,0
+1990 data 0,68,0,0,68,0,0,76,0,0,40,0,0,24,0,3
+2000 :: rem sprite_0 / singlecolor / color: 3
+2010 data 3,0,0,4,128,0,8,64,0,18,96,0,8,160,0,11
+2020 data 16,0,4,16,0,4,8,0,2,8,0,1,4,0,1,4
+2030 data 0,0,130,0,0,130,0,0,65,0,0,65,0,0,32,128
+2040 data 0,32,128,0,16,128,0,8,128,0,7,0,0,0,0,3
+2050 :: rem sprite_0 / singlecolor / color: 3
+2060 data 8,0,0,20,0,0,34,0,0,73,0,0,146,128,0,68
+2070 data 64,0,40,32,0,16,16,0,8,8,0,4,4,0,2,2
+2080 data 0,1,1,0,0,129,0,0,64,128,0,32,128,0,24,64
+2090 data 0,6,64,0,1,192,0,0,0,0,0,0,0,0,0,3
+2100 :: rem sprite_0 / singlecolor / color: 3
+2110 data 0,0,0,0,0,0,8,0,0,20,0,0,35,0,0,97
+2120 data 128,0,73,64,0,130,48,0,196,8,0,40,6,0,24,1
+2130 data 0,6,0,128,1,128,64,0,112,96,0,12,32,0,3,224
+2140 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3
+2150 :: rem sprite_0 / singlecolor / color: 3
+2160 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24
+2170 data 0,0,38,0,0,33,224,0,96,156,0,73,3,128,129,0
+2180 data 96,226,0,16,31,0,8,0,224,8,0,28,8,0,3,240
+2190 data 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3

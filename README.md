@@ -1,2 +1,3 @@
-# seaports
-A game for Mega65
+# Seaports
+
+A game for the Mega65
